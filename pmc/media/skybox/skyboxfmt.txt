@@ -1,0 +1,7 @@
+skyboxes for the choks engine are stored in an animated webp as follows:
+right left top bottom front back
+
+this can be easily done with img2webp, which is a binary distributed with libwebp.
+
+USAGE:
+img2webp right left top bottom front back

@@ -1,0 +1,15 @@
+{
+    "files.associations": {
+        "gl.h": "c",
+        "turan_choks.h": "c",
+        "stdio.h": "c",
+        "stdlib.h": "c",
+        "handmademath.h": "c",
+        "mechanicalmath.h": "c",
+        "complex": "c",
+        "ios": "c",
+        "__node_handle": "c",
+        "__locale": "c",
+        "lolita.h": "c"
+    }
+}
