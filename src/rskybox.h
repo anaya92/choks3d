@@ -61,8 +61,9 @@ static void rskybox_setup()
 
     glGenBuffers(1, &_rskybox.vbo);
     glBindBuffer(GL_ARRAY_BUFFER, _rskybox.vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(_rskybox_vertices), _rskybox_vertices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), _rskybox_vertices);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
     glEnableVertexAttribArray(0);
 
     _rskybox.shaderprog = program_load_from_files("gfx/src/skybox.v.glsl", "gfx/src/skybox.f.glsl");

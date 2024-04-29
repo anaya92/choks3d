@@ -15,4 +15,4 @@ void main()
     texture_coordinates = vec3(position.xy, -position.z);
     vec4 pos = projection * mat4(mat3(view)) * vec4(position, 1.0);
     gl_Position = pos.xyww;
-}  
+}

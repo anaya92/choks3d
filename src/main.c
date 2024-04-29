@@ -28,7 +28,11 @@ int main(int argc, char* argv[])
 {
     chdir(CWD);
 
-    SDL_Init(SDL_INIT_EVERYTHING);
+    if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
+    {
+        printf("SDL initialization err.\n");
+        exit(-1);
+    }
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
@@ -42,7 +46,20 @@ int main(int argc, char* argv[])
         CHOKS_HEIGHT,
         SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL
     );
+
+    if (!window)
+    {
+        printf("SDL Window err.\n");
+        exit(-2);
+    }
+
     SDL_GLContext sdl_gl_context = SDL_GL_CreateContext(window);
+
+    if (!sdl_gl_context)
+    {
+        printf("SDL GL Context err.\n");
+        exit(-3);
+    }
 
     if (gladLoadGL((GLADloadfunc) SDL_GL_GetProcAddress) == 0)
     {
@@ -50,8 +67,12 @@ int main(int argc, char* argv[])
     }
     glClearColor(0.0f, 0.512f, 0.512f, 1.0f);
 
+    SDL_GL_SetSwapInterval(0);
+
+    printf("OPENGL %s | %s\n", glGetString(GL_VENDOR), glGetString(GL_RENDERER));
+
     setup_choks();
-    setup_lolkim();
+    // setup_lolkim();
 
     unsigned int indices[] = {
         0, 1, 2, 1, 2, 3
@@ -207,7 +228,7 @@ int main(int argc, char* argv[])
         SDL_GL_SwapWindow(window);
     }
 
-    printf("\n\nshutting down. avg slimetime %f\n", avg_delta * 1000);
+    printf("\n\nshutting down. avg slimetime %fms\n", avg_delta * 1000);
 
     program_free(water_program);
     texture_free(scrolling);
@@ -220,6 +241,9 @@ int main(int argc, char* argv[])
     primitive_free(&plane);
 
     cleanup_choks();
+    // cleanup_lolkim();
+
+    printf("cleaned up gpu resources.\n");
 
     SDL_GL_DeleteContext(sdl_gl_context);
     SDL_DestroyWindow(window);

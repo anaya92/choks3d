@@ -23,15 +23,15 @@ void setup_lolkim()
     clustermanager.generate_grid = software_generate_cluster_grid;
     clustermanager.populate_grid = software_populate_cluster_grid;
 
-    glGenBuffers(1, &ubo);
-    glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+    // glGenBuffers(1, &ubo);
+    // glBindBuffer(GL_UNIFORM_BUFFER, ubo);
 
-    glBufferData(GL_UNIFORM_BUFFER, sizeof())
+    // glBufferData(GL_UNIFORM_BUFFER, sizeof())
 }
 
 void cleanup_lolkim()
 {
-    glDeleteBuffers(1, &ubo);
+    // glDeleteBuffers(1, &ubo);
 }
 
 void attach_lighting_data_to_program(program_t program)

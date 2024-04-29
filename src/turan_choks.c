@@ -167,23 +167,26 @@ void primitive_draw(primitive_t* this)
 
 // PROGRAMS
 // --------
-static char* slurp(const char* path)
+static char* slurp(const char* path) // ALL GOOD
 {
     char* buffer = 0;
-    int length;
-    FILE* f = fopen (path, "rb");
+    size_t length;
+    FILE* f = fopen(path, "r");
 
     if (f)
     {
-        fseek (f, 0, SEEK_END);
-        length = ftell (f);
-        fseek (f, 0, SEEK_SET);
-        buffer = malloc (length);
+        fseek(f, 0L, SEEK_END);
+        length = ftell(f);
+        fseek(f, 0, SEEK_SET);
+        buffer = malloc(length);
+
         if (buffer)
         {
-            fread (buffer, 1, length, f);
+            size_t new_size = fread(buffer, 1, length, f);
+            buffer[new_size] = '\0'; // FOR SAFETY
         }
-        fclose (f);
+
+        fclose(f);
     }
 
     return buffer;
@@ -205,6 +208,8 @@ program_t program_load_from_files(const char* vertex_shader_path, const char* fr
     char* vertex_source = slurp(vertex_shader_path);
     char* fragment_source = slurp(fragment_shader_path);
 
+    // printf("%s (vertex):\n%s\n%s (fragment):\n%s\n", vertex_shader_path, vertex_source, fragment_shader_path, fragment_source);
+
     if (!vertex_source || !fragment_source)
     {
         choks_debug_printf("program source paths not valid.\n");
@@ -223,6 +228,8 @@ program_t program_load_from_source(const char* vertex_source, const char* fragme
 {
     program_t this; // put a finger down if you can squirt.....
     this.id = glCreateProgram();
+
+    // printf("vertex:\n%s\nfragment:\n%s\n", vertex_source, fragment_source);
 
     int vertex_shader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertex_shader, 1, &vertex_source, nil);
@@ -279,22 +286,23 @@ void program_free(program_t this)
 #include <webp/decode.h>
 #include <webp/demux.h>
 
-static char* slurp_verbose(const char* path, int* size)
+static char* slurp_bytes(const char* path, size_t* size) // ALL GOOD (no mem err)
 {
     char* buffer = 0;
-    int length;
+    size_t length;
     FILE* f = fopen (path, "rb");
 
     if (f)
     {
-        fseek (f, 0, SEEK_END);
-        length = ftell (f);
-        *size = length;
-        fseek (f, 0, SEEK_SET);
-        buffer = malloc (length);
+        fseek(f, 0, SEEK_END);
+        length = ftell(f);
+        fseek(f, 0, SEEK_SET);
+        buffer = malloc(length);
+
         if (buffer)
         {
-            fread (buffer, 1, length, f);
+            size_t new_size = fread(buffer, 1, length, f);
+            *size = new_size;
         }
         fclose (f);
     }
@@ -306,8 +314,8 @@ texture_t texture_load_2d_from_file(const char* path)
 {
     texture_t this = { 0 };
 
-    int size;
-    const uint8_t* data = (uint8_t*) slurp_verbose(path, &size);
+    size_t size;
+    const uint8_t* data = (uint8_t*) slurp_bytes(path, &size);
 
     if (data)
     {
@@ -361,8 +369,8 @@ texture_t texture_load_cubemap_from_file(const char* path)
     texture_t this = { 0 };
     
     // load image
-    int size;
-    const uint8_t* data = (uint8_t*) slurp_verbose(path, &size);
+    size_t size;
+    const uint8_t* data = (uint8_t*) slurp_bytes(path, &size);
 
     if (data)
     {
