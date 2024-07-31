@@ -408,9 +408,7 @@ texture_t texture_load_cubemap_from_file(const char* path)
             glGenTextures(1, &this.id);
             glBindTexture(GL_TEXTURE_CUBE_MAP, this.id);
 
-            #if CHOKS_DEBUG
             int index = 0;
-            #endif
             while (WebPAnimDecoderHasMoreFrames(decoder))
             {
                 uint8_t* buf;
@@ -428,9 +426,9 @@ texture_t texture_load_cubemap_from_file(const char* path)
                     GL_UNSIGNED_BYTE,
                     buf
                 );
-
-                #if CHOKS_DEBUG
+                
                 index++;
+                #if CHOKS_DEBUG
                 choks_debug_printf("loaded %i\n", index);
                 #endif
             }
