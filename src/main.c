@@ -1,15 +1,14 @@
 // primitives only bro
 #include "turan_choks.h"
 #include "upper_graphics.h"
-#include "lolita.h"
 
 #include "rskybox.h"
 
 #include <SDL2/SDL.h>
 #include <stdio.h>
 
-#include <unistd.h>
-#define CWD "./pmc"
+#include <unistd.h> 
+#define CWD "./content"
 
 float __planevertices[] = {
     -0.5f, 0.0f, -0.5f, 0.0f, 1.0f,
@@ -72,7 +71,6 @@ int main(int argc, char* argv[])
     printf("OPENGL %s | %s\n", glGetString(GL_VENDOR), glGetString(GL_RENDERER));
 
     setup_choks();
-    // setup_lolkim();
 
     unsigned int indices[] = {
         0, 1, 2, 1, 2, 3
