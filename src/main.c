@@ -1,6 +1,7 @@
 // primitives only bro
 #include "turan_choks.h"
 #include "upper_graphics.h"
+#include "ren2d.h"
 
 #include "rskybox.h"
 
@@ -9,6 +10,13 @@
 
 #include <unistd.h> 
 #define CWD "./content"
+
+#include "world.h"
+
+float lerp(float a, float b, float f)
+{
+    return a * (1.0 - f) + (b * f);
+}
 
 float __planevertices[] = {
     -0.5f, 0.0f, -0.5f, 0.0f, 1.0f,
@@ -68,9 +76,13 @@ int main(int argc, char* argv[])
 
     SDL_GL_SetSwapInterval(0);
 
+    // cursor stuff:
+
     printf("OPENGL %s | %s\n", glGetString(GL_VENDOR), glGetString(GL_RENDERER));
 
     setup_choks();
+
+    ren2d_init();
 
     unsigned int indices[] = {
         0, 1, 2, 1, 2, 3
@@ -84,14 +96,17 @@ int main(int argc, char* argv[])
     camera.transform.position = (vec3_t) { 0.0f, 0.0f, -10.0f };
     camera.transform.rotate = (vec3_t) { 0.0f, 90.0f, 0.0f };
     camera.fov = 120.0f;
-    camera.aspect = 4.0/3.0f;
+    camera.aspect = (float) CHOKS_WIDTH / CHOKS_HEIGHT;
     camera.near = 0.1f;
     camera.far = 1000.0f;
 
     camera_update_projection(&camera);
 
+    // loading map & skybox
     rskybox_setup();
-    texture_t cubemap = texture_load_cubemap_from_file("media/skybox/space.webp");
+    texture_t cubemap = texture_load_cubemap_from_file("media/skybox/water64.webp");
+
+    world_generate_test();
 
     texture_t scrolling = texture_load_2d_from_file("media/misc/noise.webp");
     program_t water_program = program_load_from_files("gfx/src/water.v.glsl", "gfx/src/water.f.glsl");
@@ -115,10 +130,20 @@ int main(int argc, char* argv[])
 
     transform_t trans_plane = { 0 };
     trans_plane.scale = (vec3_t) { 10.0f, 0.0f, 10.0f };
+    trans_plane.position.y = 3.0f;
+
+    spritefont_t font_fixedsys = spritefont_load_from_img("media/font/fixedsys.webp");
+    char* fpsmsg = malloc(64);
+
 
     int time_loc = glGetUniformLocation(water_program.id, "time");
 
     // printf("frametime (secs): %10f", 0.0f);
+
+    float desired_fov = 120.0f;
+    vec2_t mousedelta = { 0.0f };
+    hmm_bool mouselook = 0;
+    float mousesens = 10.0f;
 
     float avg_delta = 1.0f;
 
@@ -155,8 +180,8 @@ int main(int argc, char* argv[])
                             running = 0;
                             break;
                         case SDL_SCANCODE_Z:
-                            camera.fov = 60.0f;
-                            camera_update_projection(&camera);
+                            desired_fov = 60.0f;
+                            mousesens = 5.0f;
                             break;
                         default: break;
                     }
@@ -165,13 +190,48 @@ int main(int argc, char* argv[])
                     switch (ev.key.keysym.scancode)
                     {
                         case SDL_SCANCODE_Z:
-                            camera.fov = 120.0f;
-                            camera_update_projection(&camera);
+                            desired_fov = 120.0f;
+                            mousesens = 10.0f;
                             break;
                         default: break;
                     }
                     break;
+                case SDL_MOUSEMOTION:
+                    mousedelta.x = ev.motion.xrel;
+                    mousedelta.y = ev.motion.yrel;
+                    break;
+                case SDL_MOUSEBUTTONDOWN:
+                    mouselook = 1;
+                    break;
+                case SDL_MOUSEBUTTONUP:
+                    mouselook = 0;
+                    SDL_SetCursor(NULL);
+                    break;
             }
+        }
+
+        // update camera fov
+        if (camera.fov != desired_fov)
+        {
+            if (fabsf(camera.fov - desired_fov) < 0.001)
+            {
+                camera.fov = desired_fov;
+            }
+
+            camera.fov -= (camera.fov - desired_fov) * 5.0f * delta;
+
+            camera_update_projection(&camera);
+        }
+        
+        if (mouselook)
+        {
+            // note: these are reversed b/c the axis of rotation is what
+            // axis is rotated around, not which plane it is rotating in
+            camera.transform.rotate.x += mousedelta.y * 100.0f * delta;
+            camera.transform.rotate.y -= mousedelta.x * 100.0f * delta;
+
+            mousedelta.x = 0;
+            mousedelta.y = 0;
         }
 
         const unsigned char* kb = SDL_GetKeyboardState(NULL);
@@ -214,19 +274,32 @@ int main(int argc, char* argv[])
         plane.draw_mode = GL_POINTS;
         primitive_draw(&plane);
 
+        set_model_matrix(HMM_Mat4d(1.0f));
+        world_draw();
+
         rskybox_render(cubemap);
         
         // transparent objects have to be rendered last. UGH
+        set_model_matrix(transform_to_matrix(&trans_plane));
         plane.draw_mode = GL_TRIANGLES;
         glUseProgram(water_program.id);
         glUniform1f(time_loc, (float) ((float)SDL_GetTicks() / 1000.0f));
         glBindTexture(GL_TEXTURE_2D, scrolling.id);
         primitive_draw(&plane);
 
+        glClear(GL_DEPTH_BUFFER_BIT);
+
+        sprintf(fpsmsg, "delta: %f ms", delta * 1000);
+        draw_text_spritefont(&font_fixedsys, 0.5f, (vec3_t) { 1.0f, 0.5f, 1.0f }, fpsmsg, (vec2_t) { 10.0f, 10.0f });
+
         SDL_GL_SwapWindow(window);
     }
 
     printf("\n\nshutting down. avg slimetime %fms\n", avg_delta * 1000);
+
+    free(fpsmsg);
+
+    spritefont_free(&font_fixedsys);
 
     program_free(water_program);
     texture_free(scrolling);
@@ -237,6 +310,8 @@ int main(int argc, char* argv[])
     program_free(point_program);
     program_free(program);
     primitive_free(&plane);
+
+    ren2d_cleanup();
 
     cleanup_choks();
     // cleanup_lolkim();

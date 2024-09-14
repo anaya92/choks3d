@@ -5,3 +5,6 @@ this can be easily done with img2webp, which is a binary distributed with libweb
 
 USAGE:
 img2webp right left top bottom front back
+
+using https://jaxry.github.io/panorama-to-cubemap/:
+img2webp px.png nx.png py.png ny,png pz.png nz.png

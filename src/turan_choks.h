@@ -7,8 +7,8 @@
 
 // CHOKS CONFIGURATION
 #define CHOKS_DEBUG 1
-#define CHOKS_WIDTH 800
-#define CHOKS_HEIGHT 600
+#define CHOKS_WIDTH 1280
+#define CHOKS_HEIGHT 800
 
 #include <glad/gl.h>
 #include "external/HandmadeMath.h"
@@ -69,9 +69,17 @@ extern void program_free(program_t this);
 // TEXTURES
 // --------
 // i think for this one ill be sticking to .webp
+typedef enum
+{
+    CHOKS_TEXTURETYPE_2D,
+    CHOKS_TEXTURETYPE_CUBEMAP,
+} texturetype_t;
+
 typedef struct
 {
+    texturetype_t type;
     unsigned int id;
+    int width, height;
 } texture_t;
 
 extern texture_t texture_load_2d_from_mem(unsigned char* data);

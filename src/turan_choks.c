@@ -313,16 +313,23 @@ static char* slurp_bytes(const char* path, size_t* size) // ALL GOOD (no mem err
 texture_t texture_load_2d_from_file(const char* path)
 {
     texture_t this = { 0 };
+    this.type = CHOKS_TEXTURETYPE_2D;
 
     size_t size;
     const uint8_t* data = (uint8_t*) slurp_bytes(path, &size);
 
     if (data)
     {
-        int width, height;
-        uint8_t* webp_data = WebPDecodeRGBA(data, size, &width, &height);
+        // use webp decode to load img and flip it
+        WebPDecoderConfig config;
+        WebPInitDecoderConfig(&config);
+        config.output.colorspace = MODE_RGBA;
 
-        if (!webp_data)
+        config.options.flip = 1;
+
+        WebPDecode(data, size, &config);
+
+        if (!config.output.private_memory)
         {
             choks_debug_printf("failed to parse %s (not webp?)\n", path);
             free((void*) data);
@@ -330,6 +337,9 @@ texture_t texture_load_2d_from_file(const char* path)
         }
 
         // A.O.K. proceed to load to gl
+        this.width = config.output.width;
+        this.height = config.output.height;
+
         glGenTextures(1, &this.id);
         glBindTexture(GL_TEXTURE_2D, this.id);
 
@@ -337,12 +347,12 @@ texture_t texture_load_2d_from_file(const char* path)
             GL_TEXTURE_2D,
             0,
             GL_RGBA,
-            width,
-            height,
+            this.width,
+            this.height,
             0,
             GL_RGBA,
             GL_UNSIGNED_BYTE,
-            webp_data
+            config.output.private_memory
         );
 
         // image configs TODO: make these texture filtering settings configurable etc. etc.
@@ -351,7 +361,7 @@ texture_t texture_load_2d_from_file(const char* path)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-        WebPFree(webp_data);
+        WebPFreeDecBuffer(&config.output);
     }
     else
     {
@@ -367,6 +377,7 @@ texture_t texture_load_2d_from_file(const char* path)
 texture_t texture_load_cubemap_from_file(const char* path)
 {
     texture_t this = { 0 };
+    this.type = CHOKS_TEXTURETYPE_CUBEMAP;
     
     // load image
     size_t size;
@@ -394,6 +405,7 @@ texture_t texture_load_cubemap_from_file(const char* path)
         WebPAnimInfo anim_info;
         WebPAnimDecoderGetInfo(decoder, &anim_info);
 
+
         // checks
         if (anim_info.frame_count != 6)
         {
@@ -404,6 +416,9 @@ texture_t texture_load_cubemap_from_file(const char* path)
         // after checks are done.
         if (valid)
         {
+            this.width = anim_info.canvas_width;
+            this.height = anim_info.canvas_height;
+
             // NOW generate opengl cubemap texture.
             glGenTextures(1, &this.id);
             glBindTexture(GL_TEXTURE_CUBE_MAP, this.id);
